@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Events</h2>
+
+    {% if current_user.is_authenticated %}
+    <a class="btn btn-primary" href="{{ url_for('main.add_event') }}">Add Event</a>
+    {% endif %}
+</div>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Title</th>
+            <th>Venue</th>
+            {% if current_user.is_authenticated %}
+            <th>Actions</th>
+            {% endif %}
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for e in events %}
+        <tr>
+            <td>{{ e.date }}</td>
+            <td>{{ e.start_time }} - {{ e.end_time }}</td>
+            <td>{{ e.title }}</td>
+            <td>{{ e.venue.name }}</td>
+
+            {% if current_user.is_authenticated %}
+            <td>
+                <a href="#" class="btn btn-sm btn-secondary disabled">Edit (Add later)</a>
+            </td>
+            {% endif %}
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="5" class="text-center">No events found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

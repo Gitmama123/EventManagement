@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ action }} Event</h2>
+
+<form method="POST">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+        {{ form.title.label }}  
+        {{ form.title(class_="form-control") }}
+    </div>
+
+    <div class="mb-3">
+        {{ form.description.label }}
+        {{ form.description(class_="form-control") }}
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            {{ form.date.label }}
+            {{ form.date(class_="form-control") }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+            {{ form.start_time.label }}
+            {{ form.start_time(class_="form-control") }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+            {{ form.end_time.label }}
+            {{ form.end_time(class_="form-control") }}
+        </div>
+    </div>
+
+    <div class="mb-3">
+        {{ form.venue_id.label }}
+        {{ form.venue_id(class_="form-select") }}
+    </div>
+
+    <button class="btn btn-primary">{{ action }}</button>
+</form>
+
+{% endblock %}

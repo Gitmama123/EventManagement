@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Venues</h2>
+
+    {% if current_user.is_authenticated %}
+    <a class="btn btn-primary" href="{{ url_for('main.add_venue') }}">Add Venue</a>
+    {% endif %}
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Capacity</th>
+            <th>Resources</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for v in venues %}
+        <tr>
+            <td>{{ v.name }}</td>
+            <td>{{ v.capacity }}</td>
+            <td>{{ v.resources }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="3" class="text-center">No venues found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
