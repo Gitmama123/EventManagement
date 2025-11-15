@@ -72,17 +72,20 @@ event_manager/
 
 🛠 Installation & Setup
 1. Create and activate virtual environment
+   
 python -m venv venv
 source venv/bin/activate        # Mac/Linux
 venv\Scripts\activate           # Windows
 
-2. Install dependencies
+3. Install dependencies
+   
 pip install -r requirements.txt
 
-3. Run the application
+5. Run the application
+   
 python app.py
 
-4. Open your browser
+7. Open your browser
 
 Visit:
 
