@@ -75,13 +75,13 @@ event_manager/
    
 ```bash
 python -m venv venv
-```
 
-```bash
+
+
 source venv/bin/activate        # Mac/Linux
-```
 
-```bash
+
+
 venv\Scripts\activate           # Windows
 ```
 
