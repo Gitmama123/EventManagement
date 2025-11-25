@@ -1,6 +1,14 @@
+# app/models.py
 from . import db
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+
+# association table for many-to-many between Event and Participant
+event_participants = db.Table(
+    'event_participants',
+    db.Column('event_id', db.Integer, db.ForeignKey('event.id'), primary_key=True),
+    db.Column('participant_id', db.Integer, db.ForeignKey('participant.id'), primary_key=True)
+)
 
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -30,8 +38,6 @@ class Resource(db.Model):
     name = db.Column(db.String(120), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
-
-    # backref
     venue = db.relationship('Venue', back_populates='resources_list')
 
     def __repr__(self):
@@ -46,5 +52,21 @@ class Event(db.Model):
     end_time = db.Column(db.Time, nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
 
+    # many-to-many participants
+    participants = db.relationship('Participant', secondary=event_participants, back_populates='events')
+
     def __repr__(self):
         return f'<Event {self.title}>'
+
+class Participant(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(150), nullable=False)
+    email = db.Column(db.String(200), nullable=True)
+    phone = db.Column(db.String(50), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+
+    # backref to events
+    events = db.relationship('Event', secondary=event_participants, back_populates='participants')
+
+    def __repr__(self):
+        return f'<Participant {self.name} ({self.email})>'

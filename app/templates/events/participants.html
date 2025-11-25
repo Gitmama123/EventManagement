@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2>Participants for: {{ event.title }}</h2>
+    <p class="text-muted mb-0">{{ event.date }} — {{ event.start_time }} to {{ event.end_time }}</p>
+    <p class="small text-muted">Venue: {{ event.venue.name if event.venue else 'N/A' }}</p>
+  </div>
+  <div>
+    <a class="btn btn-secondary" href="{{ url_for('main.list_events') }}">Back to Events</a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Registered Participants</h5>
+        <table class="table table-sm">
+          <thead><tr><th>Name</th><th>Email</th><th>Actions</th></tr></thead>
+          <tbody>
+            {% for p in event.participants %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td>{{ p.email or '-' }}</td>
+              <td>
+                <form method="POST" action="{{ url_for('main.remove_participant_from_event', event_id=event.id, pid=p.id) }}" style="display:inline-block" onsubmit="return confirm('Remove participant from event?');">
+                  <button class="btn btn-sm btn-danger">Remove</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">No participants registered.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-6 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Add Existing Participant</h5>
+
+        {% if available %}
+        <form method="POST" action="{{ url_for('main.add_participant_to_event', event_id=event.id) }}">
+          <div class="mb-3">
+            <select name="participant_id" class="form-select" required>
+              <option value="">Select participant</option>
+              {% for p in available %}
+                <option value="{{ p.id }}">{{ p.name }}{% if p.email %} ({{ p.email }}){% endif %}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <button class="btn btn-primary">Add to Event</button>
+        </form>
+        {% else %}
+        <p class="text-muted">No available participants to add. <a href="{{ url_for('main.add_participant') }}">Create one</a>.</p>
+        {% endif %}
+
+        <hr>
+        <h6>Add a new participant</h6>
+        <a class="btn btn-outline-primary" href="{{ url_for('main.add_participant') }}">Add New Participant</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -21,7 +21,10 @@
 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>Date</th><th>Time</th><th>Title</th><th>Venue</th>
+            <th>Date</th>
+            <th>Time</th>
+            <th>Title</th>
+            <th>Venue</th>
             {% if current_user.is_authenticated %}<th>Actions</th>{% endif %}
         </tr>
     </thead>
@@ -35,6 +38,12 @@
             {% if current_user.is_authenticated %}
             <td>
                 <a class="btn btn-sm btn-secondary" href="{{ url_for('main.edit_event', event_id=e.id) }}">Edit</a>
+
+                <!-- Participants management button -->
+                <a class="btn btn-sm btn-info" href="{{ url_for('main.event_participants_view', event_id=e.id) }}">
+                  Participants
+                </a>
+
                 <form method="POST" action="{{ url_for('main.delete_event', event_id=e.id) }}" style="display:inline-block" onsubmit="return confirm('Delete event?');">
                     <button class="btn btn-sm btn-danger">Delete</button>
                 </form>

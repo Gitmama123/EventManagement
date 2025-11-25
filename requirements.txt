@@ -1,4 +1,8 @@
-Flask==2.3.2
-Flask-WTF==1.1.1
-Flask-SQLAlchemy==3.0.3
-Flask-Login==0.6.3
+Flask
+Flask-Login
+Flask-WTF
+WTForms
+email_validator
+Flask-SQLAlchemy
+Flask-Migrate
+Werkzeug

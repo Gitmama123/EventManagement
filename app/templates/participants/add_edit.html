@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ action }} Participant</h2>
+
+{# Show non-field form errors or general validation summary #}
+{% if form.errors %}
+  <div class="alert alert-danger">
+    <strong>There were problems with your submission:</strong>
+    <ul class="mb-0">
+      {% for field, errs in form.errors.items() %}
+        {% for e in errs %}
+          <li><strong>{{ field }}:</strong> {{ e }}</li>
+        {% endfor %}
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<form method="POST" novalidate>
+  {{ form.hidden_tag() }}
+
+  <div class="mb-3">
+    {{ form.name.label }}
+    {{ form.name(class_='form-control', placeholder='Full name') }}
+    {% if form.name.errors %}
+      <div class="form-text text-danger">
+        {% for err in form.name.errors %}{{ err }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.email.label }}
+    {{ form.email(class_='form-control', placeholder='email@example.com') }}
+    {% if form.email.errors %}
+      <div class="form-text text-danger">
+        {% for err in form.email.errors %}{{ err }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.phone.label }}
+    {{ form.phone(class_='form-control', placeholder='+91-XXXXXXXXXX') }}
+    {% if form.phone.errors %}
+      <div class="form-text text-danger">
+        {% for err in form.phone.errors %}{{ err }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="mb-3">
+    {{ form.notes.label }}
+    {{ form.notes(class_='form-control', rows=3) }}
+    {% if form.notes.errors %}
+      <div class="form-text text-danger">
+        {% for err in form.notes.errors %}{{ err }}{% if not loop.last %}<br>{% endif %}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+
+  <button class="btn btn-primary">{{ action }}</button>
+  <a class="btn btn-secondary" href="{{ url_for('main.list_participants') }}">Cancel</a>
+</form>
+{% endblock %}

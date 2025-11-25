@@ -1,9 +1,7 @@
+# app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import (
-    StringField, TextAreaField, DateField, TimeField,
-    SelectField, IntegerField, SubmitField
-)
-from wtforms.validators import DataRequired, NumberRange
+from wtforms import StringField, TextAreaField, DateField, TimeField, SelectField, IntegerField, SubmitField
+from wtforms.validators import DataRequired, NumberRange, Optional, Email
 
 class VenueForm(FlaskForm):
     name = StringField('Venue Name', validators=[DataRequired()])
@@ -22,4 +20,11 @@ class EventForm(FlaskForm):
 class ResourceForm(FlaskForm):
     name = StringField('Resource Name', validators=[DataRequired()])
     quantity = IntegerField('Quantity', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Save')
+
+class ParticipantForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[Optional(), Email()])
+    phone = StringField('Phone', validators=[Optional()])
+    notes = TextAreaField('Notes', validators=[Optional()])
     submit = SubmitField('Save')
