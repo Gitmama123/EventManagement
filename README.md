@@ -32,6 +32,19 @@ A Flask-based web application to manage **events**, **venues**, and **venue reso
 - Structured Resource model connected to Venue
 - Full CRUD interface
 
+
+## 🧑‍🤝‍🧑 Participant Management (NEW)
+- Add, edit, delete participants  
+- Store name, email, phone, notes  
+- Server-side validation for email + error display  
+- Assign participants to events  
+- Remove participants from events  
+- Prevent duplicate assignments  
+- Optional venue capacity limit enforcement  
+- New event-level participant dashboard  
+- Fully integrated with the Events module  
+
+
 ### 🎨 UI & UX
 - Responsive Bootstrap design
 - Unified Navbar (Events, Venues, Login/Logout)
@@ -40,28 +53,30 @@ A Flask-based web application to manage **events**, **venues**, and **venue reso
 
 ---
 
-## 📂 Project Structure
-
 EventManagement/
 │
 ├── app/
 │ ├── init.py
 │ ├── app.py
+│ ├── auth.py
 │ ├── models.py
 │ ├── routes.py
-│ ├── auth.py
 │ ├── forms.py
 │ │
 │ ├── templates/
 │ │ ├── base.html
 │ │ ├── events/
 │ │ │ ├── list.html
-│ │ │ └── add_edit.html
+│ │ │ ├── add_edit.html
+│ │ │ └── participants.html
 │ │ ├── venues/
 │ │ │ ├── list.html
 │ │ │ ├── add_edit.html
 │ │ │ ├── resources.html
 │ │ │ └── resource_add_edit.html
+│ │ ├── participants/
+│ │ │ ├── list.html
+│ │ │ └── add_edit.html
 │ │ └── auth/
 │ │ ├── login.html
 │ │ └── register.html
@@ -73,7 +88,6 @@ EventManagement/
 │
 ├── requirements.txt
 └── README.md
-
 
 ---
 
@@ -104,23 +118,19 @@ Open your browser:
 ```
 http://127.0.0.1:5000
 ```
-🧪 Usage Flow
-
-Register a new account
-
-Login
-
-Add venues
-
-Add resources under each venue
-
-Add events and assign them to venues
-
-Edit/delete as needed
-
-Filter events by date
 
 🛠 Technologies Used
+🔧 Technologies Used
 
 Python 3
+Flask
+Flask-WTF & WTForms
+Flask-Login
+Flask-SQLAlchemy
+Bootstrap 5
+SQLite
 
+
+📜 License
+
+This project is open-source for personal and educational use. You may modify and extend it freely.
