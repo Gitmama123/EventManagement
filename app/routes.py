@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user
-from .models import Venue, Event
+from .models import Venue, Event, Resource
 from . import db
 from datetime import datetime
 
@@ -31,7 +31,7 @@ def add_venue():
     from .forms import VenueForm
     form = VenueForm()
     if form.validate_on_submit():
-        v = Venue(name=form.name.data.strip(), capacity=form.capacity.data, resources=form.resources.data)
+        v = Venue(name=form.name.data.strip(), capacity=form.capacity.data)
         db.session.add(v)
         db.session.commit()
         flash("Venue added", "success")
@@ -47,7 +47,6 @@ def edit_venue(venue_id):
     if form.validate_on_submit():
         v.name = form.name.data.strip()
         v.capacity = form.capacity.data
-        v.resources = form.resources.data
         db.session.commit()
         flash("Venue updated", "success")
         return redirect(url_for('main.list_venues'))
@@ -57,7 +56,7 @@ def edit_venue(venue_id):
 @login_required
 def delete_venue(venue_id):
     v = Venue.query.get_or_404(venue_id)
-    # Prevent deletion if there are associated events (safer)
+    # Prevent deletion if there are associated events
     if v.events:
         flash("Cannot delete venue with existing events. Delete its events first.", "danger")
         return redirect(url_for('main.list_venues'))
@@ -65,6 +64,51 @@ def delete_venue(venue_id):
     db.session.commit()
     flash("Venue deleted.", "info")
     return redirect(url_for('main.list_venues'))
+
+# ----------------- RESOURCE ROUTES -----------------
+@main_bp.route('/venue/<int:venue_id>/resources')
+@login_required
+def manage_resources(venue_id):
+    venue = Venue.query.get_or_404(venue_id)
+    return render_template('venues/resources.html', venue=venue)
+
+@main_bp.route('/venue/<int:venue_id>/resource/add', methods=['GET','POST'])
+@login_required
+def add_resource(venue_id):
+    venue = Venue.query.get_or_404(venue_id)
+    from .forms import ResourceForm
+    form = ResourceForm()
+    if form.validate_on_submit():
+        res = Resource(name=form.name.data.strip(), quantity=form.quantity.data, venue_id=venue_id)
+        db.session.add(res)
+        db.session.commit()
+        flash("Resource added", "success")
+        return redirect(url_for('main.manage_resources', venue_id=venue_id))
+    return render_template('venues/resource_add_edit.html', form=form, action="Add", venue=venue)
+
+@main_bp.route('/resource/<int:res_id>/edit', methods=['GET','POST'])
+@login_required
+def edit_resource(res_id):
+    res = Resource.query.get_or_404(res_id)
+    from .forms import ResourceForm
+    form = ResourceForm(obj=res)
+    if form.validate_on_submit():
+        res.name = form.name.data.strip()
+        res.quantity = form.quantity.data
+        db.session.commit()
+        flash("Resource updated", "success")
+        return redirect(url_for('main.manage_resources', venue_id=res.venue_id))
+    return render_template('venues/resource_add_edit.html', form=form, action="Edit", venue=res.venue)
+
+@main_bp.route('/resource/<int:res_id>/delete', methods=['POST'])
+@login_required
+def delete_resource(res_id):
+    res = Resource.query.get_or_404(res_id)
+    venue_id = res.venue_id
+    db.session.delete(res)
+    db.session.commit()
+    flash("Resource deleted", "info")
+    return redirect(url_for('main.manage_resources', venue_id=venue_id))
 
 # ----------------- EVENT ROUTES -----------------
 @main_bp.route('/events')

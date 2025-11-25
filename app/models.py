@@ -17,8 +17,25 @@ class Venue(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False, unique=True)
     capacity = db.Column(db.Integer, nullable=False, default=0)
-    resources = db.Column(db.String(300))
-    events = db.relationship('Event', backref='venue', lazy=True, cascade='all, delete')
+
+    # relationship to Resource (one-to-many)
+    resources_list = db.relationship('Resource', back_populates='venue', cascade='all, delete-orphan')
+    events = db.relationship('Event', backref='venue', lazy=True, cascade='all, delete-orphan')
+
+    def __repr__(self):
+        return f'<Venue {self.name}>'
+
+class Resource(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+
+    # backref
+    venue = db.relationship('Venue', back_populates='resources_list')
+
+    def __repr__(self):
+        return f'<Resource {self.name} x{self.quantity} @ venue {self.venue_id}>'
 
 class Event(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -28,3 +45,6 @@ class Event(db.Model):
     start_time = db.Column(db.Time, nullable=False)
     end_time = db.Column(db.Time, nullable=False)
     venue_id = db.Column(db.Integer, db.ForeignKey('venue.id'), nullable=False)
+
+    def __repr__(self):
+        return f'<Event {self.title}>'

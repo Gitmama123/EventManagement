@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Manage Resources — {{ venue.name }}</h2>
+
+<div class="mb-3">
+  <a class="btn btn-primary" href="{{ url_for('main.add_resource', venue_id=venue.id) }}">Add Resource</a>
+  <a class="btn btn-secondary" href="{{ url_for('main.list_venues') }}">Back to Venues</a>
+</div>
+
+<table class="table table-bordered">
+  <thead><tr><th>Resource</th><th>Quantity</th><th>Actions</th></tr></thead>
+  <tbody>
+    {% for r in venue.resources_list %}
+    <tr>
+      <td>{{ r.name }}</td>
+      <td>{{ r.quantity }}</td>
+      <td>
+        <a class="btn btn-sm btn-secondary" href="{{ url_for('main.edit_resource', res_id=r.id) }}">Edit</a>
+
+        <form method="POST" action="{{ url_for('main.delete_resource', res_id=r.id) }}" style="display:inline-block" onsubmit="return confirm('Delete resource?');">
+          <button class="btn btn-sm btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3" class="text-center">No resources added yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

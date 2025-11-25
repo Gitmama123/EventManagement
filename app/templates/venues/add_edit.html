@@ -15,13 +15,7 @@
         {{ form.capacity(class_="form-control") }}
     </div>
 
-    <div class="mb-3">
-        {{ form.resources.label }}
-        {{ form.resources(class_="form-control") }}
-    </div>
-
     <button class="btn btn-primary">{{ action }}</button>
     <a href="{{ url_for('main.list_venues') }}" class="btn btn-secondary">Cancel</a>
 </form>
-
 {% endblock %}
