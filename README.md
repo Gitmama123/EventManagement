@@ -1,151 +1,126 @@
-📘 Event Manager (with User Login System)
+# Event Logistics & Schedule Manager
 
-A lightweight Flask-based web application for managing events and venues, now enhanced with a secure user authentication system (register/login/logout).
-Designed for college event committees, office scheduling, or any small-scale event management workflow.
+A Flask-based web application to manage **events**, **venues**, and **venue resources**, with full **user authentication** and a clean Bootstrap UI.
 
-🚀 Features
-✅ User Authentication
+---
 
-Secure registration with hashed passwords
+## 🚀 Features
 
-Login / Logout using Flask-Login
+### 🔐 User Authentication
+- User registration & login
+- Protected routes for all CRUD operations
+- Access control for editing/deleting entities
 
-Session-based authentication
+### 📅 Event Management
+- Add, edit, delete events
+- Select date, start time, end time
+- Assign events to venues
+- Detect & prevent scheduling conflicts
+- Filter events by date
+- Clean tabular UI for event listings
 
-Unauthorized users are automatically redirected to login
+### 🏛 Venue Management
+- Add, edit, delete venues
+- Track venue capacity
+- View number of resources per venue
+- Dedicated page for each venue’s resources
 
-🎯 Event Management
+### 🔧 Venue Resource Management
+(Under Venue Management)
+- Add, edit, delete resources per venue
+- Track resource quantity
+- Structured Resource model connected to Venue
+- Full CRUD interface
 
-Add events with:
+### 🎨 UI & UX
+- Responsive Bootstrap design
+- Unified Navbar (Events, Venues, Login/Logout)
+- Flash messages (success/error/info)
+- Clean form layouts with validation
 
-Title
+---
 
-Description
+## 📂 Project Structure
 
-Date
+EventManagement/
+│
+├── app/
+│ ├── init.py
+│ ├── app.py
+│ ├── models.py
+│ ├── routes.py
+│ ├── auth.py
+│ ├── forms.py
+│ │
+│ ├── templates/
+│ │ ├── base.html
+│ │ ├── events/
+│ │ │ ├── list.html
+│ │ │ └── add_edit.html
+│ │ ├── venues/
+│ │ │ ├── list.html
+│ │ │ ├── add_edit.html
+│ │ │ ├── resources.html
+│ │ │ └── resource_add_edit.html
+│ │ └── auth/
+│ │ ├── login.html
+│ │ └── register.html
+│ │
+│ └── static/
+│
+├── instance/
+│ └── app.db
+│
+├── requirements.txt
+└── README.md
 
-Start & End Time
 
-Venue selection
+---
 
-Edit/Delete events
+## ⚙️ Installation & Setup
 
-Auto-detection of venue booking conflicts
-
-Sort events by date and time
-
-🏛 Venue Management
-
-Add/Edit/Delete venues
-
-Store capacity and resources
-
-Prevent deleting venues with linked events
-
-🛡 Access Control
-
-Viewing events/venues → public
-
-Adding/editing/deleting → login required
-
-📂 Project Structure
-event_manager/
-│── app.py
-│── config.py
-│── requirements.txt
-│── instance/
-│     └── app.db
-│── app/
-     │── __init__.py
-     │── auth.py
-     │── routes.py
-     │── models.py
-     │── forms.py
-     │── templates/
-         │── base.html
-         │── auth/
-         │     ├── login.html
-         │     └── register.html
-         │── events/
-         │── venues/
-     │── static/
-
-🛠 Installation & Setup
-1. Create and activate virtual environment
-   
+### 1️⃣ Clone the Repository
 ```bash
-python -m venv venv
-
-
-
-source venv/bin/activate        # Mac/Linux
-
-
-
-venv\Scripts\activate           # Windows
+gh repo clone Gitmama123/EventManagement
+cd EventManagement
 ```
-
-3. Install dependencies
-   
-```bash
+2️⃣ Create Virtual Environment
+```
+python -m venv venv
+# Windows:
+venv\Scripts\activate
+# Mac/Linux:
+source venv/bin/activate
+```
+3️⃣ Install Dependencies
+```
 pip install -r requirements.txt
 ```
-
-5. Run the application
-   
-```bash
+4️⃣ Initialize the Database
+```
 python app.py
 ```
-
-7. Open your browser
-
-Visit:
-
+Open your browser:
 ```
 http://127.0.0.1:5000
 ```
+🧪 Usage Flow
 
-🔐 Authentication Details
+Register a new account
 
-Passwords are hashed using Werkzeug security
+Login
 
-User sessions handled by Flask-Login
+Add venues
 
-Login-required protection for:
+Add resources under each venue
 
-Adding venues
+Add events and assign them to venues
 
-Adding events
+Edit/delete as needed
 
-Editing events/venues
+Filter events by date
 
-Deleting events/venues
+🛠 Technologies Used
 
-🧠 Conflict Checking Logic
+Python 3
 
-Events cannot overlap in the same venue.
-
-Two events conflict if:
-
-start_time < existing_end AND end_time > existing_start
-
-
-If conflict detected → user gets an error.
-
-🎨 Frontend
-
-Styled with Bootstrap 5
-
-Responsive and clean UI
-
-Navbar updates dynamically based on login state
-
-📦 Dependencies
-
-Main libraries:
-
-Flask
-Flask-WTF
-Flask-SQLAlchemy
-Flask-Login
-Werkzeug
