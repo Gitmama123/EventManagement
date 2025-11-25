@@ -120,8 +120,6 @@ http://127.0.0.1:5000
 ```
 
 🛠 Technologies Used
-🔧 Technologies Used
-
 Python 3
 Flask
 Flask-WTF & WTForms
