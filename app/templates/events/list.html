@@ -9,37 +9,42 @@
     {% endif %}
 </div>
 
+<form class="row g-2 mb-3" method="get" action="{{ url_for('main.list_events') }}">
+    <div class="col-auto">
+        <input type="date" name="date" class="form-control" value="{{ request.args.get('date','') }}">
+    </div>
+    <div class="col-auto">
+        <button class="btn btn-outline-secondary">Filter</button>
+        <a href="{{ url_for('main.list_events') }}" class="btn btn-link">Clear</a>
+    </div>
+</form>
+
 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>Date</th>
-            <th>Time</th>
-            <th>Title</th>
-            <th>Venue</th>
-            {% if current_user.is_authenticated %}
-            <th>Actions</th>
-            {% endif %}
+            <th>Date</th><th>Time</th><th>Title</th><th>Venue</th>
+            {% if current_user.is_authenticated %}<th>Actions</th>{% endif %}
         </tr>
     </thead>
-
     <tbody>
         {% for e in events %}
         <tr>
             <td>{{ e.date }}</td>
             <td>{{ e.start_time }} - {{ e.end_time }}</td>
             <td>{{ e.title }}</td>
-            <td>{{ e.venue.name }}</td>
-
+            <td>{{ e.venue.name if e.venue else 'N/A' }}</td>
             {% if current_user.is_authenticated %}
             <td>
-                <a href="#" class="btn btn-sm btn-secondary disabled">Edit (Add later)</a>
+                <a class="btn btn-sm btn-secondary" href="{{ url_for('main.edit_event', event_id=e.id) }}">Edit</a>
+
+                <form method="POST" action="{{ url_for('main.delete_event', event_id=e.id) }}" style="display:inline-block" onsubmit="return confirm('Delete event?');">
+                    <button class="btn btn-sm btn-danger">Delete</button>
+                </form>
             </td>
             {% endif %}
         </tr>
         {% else %}
-        <tr>
-            <td colspan="5" class="text-center">No events found</td>
-        </tr>
+        <tr><td colspan="5" class="text-center">No events yet.</td></tr>
         {% endfor %}
     </tbody>
 </table>
