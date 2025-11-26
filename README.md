@@ -33,7 +33,7 @@ A Flask-based web application to manage **events**, **venues**, and **venue reso
 - Full CRUD interface
 
 
-## 🧑‍🤝‍🧑 Participant Management (NEW)
+## 🧑‍🤝‍🧑 Participant Management
 - Add, edit, delete participants  
 - Store name, email, phone, notes  
 - Server-side validation for email + error display  
