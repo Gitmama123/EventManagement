@@ -33,7 +33,7 @@ A Flask-based web application to manage **events**, **venues**, and **venue reso
 - Full CRUD interface
 
 
-## 🧑‍🤝‍🧑 Participant Management (NEW)
+## 🧑‍🤝‍🧑 Participant Management
 - Add, edit, delete participants  
 - Store name, email, phone, notes  
 - Server-side validation for email + error display  
@@ -120,8 +120,6 @@ http://127.0.0.1:5000
 ```
 
 🛠 Technologies Used
-🔧 Technologies Used
-
 Python 3
 Flask
 Flask-WTF & WTForms
