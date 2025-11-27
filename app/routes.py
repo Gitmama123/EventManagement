@@ -1,32 +1,27 @@
 # app/routes.py
 from flask import (
     Blueprint, render_template, redirect, url_for,
-    request, flash, current_app
+    request, flash, current_app, abort
 )
 from flask_login import login_required, current_user
 from . import db
 from .models import Venue, Event, Resource, Participant
+from .utils import require_roles
 from datetime import datetime
 
-# Blueprint MUST be defined before using @main_bp.route
 main_bp = Blueprint('main', __name__)
 
-
-# ---- Utility helpers ------------------------------------------------------
+# ---------- helpers ----------
 def is_conflict(venue_id, date, start, end, ignore_id=None):
-    """Return True if time interval [start, end) conflicts with existing events at venue on date."""
     events = Event.query.filter_by(venue_id=venue_id, date=date).all()
     for e in events:
         if ignore_id and e.id == ignore_id:
             continue
-        # overlap: start < e.end_time and end > e.start_time
-        if (start < e.end_time and end > e.start_time):
+        if start < e.end_time and end > e.start_time:
             return True
     return False
 
-
 def flash_form_errors(form):
-    """Optional helper to flash a concise summary of form errors."""
     messages = []
     for field, errs in form.errors.items():
         for e in errs:
@@ -35,22 +30,20 @@ def flash_form_errors(form):
         flash("Please fix the form errors and try again.", "danger")
         current_app.logger.debug("Form errors: %s", messages)
 
-
-# ---- Root -----------------------------------------------------------------
+# ---------- root ----------
 @main_bp.route('/')
 def index():
     return redirect(url_for('main.list_events'))
 
-
-# ---- Venue routes ---------------------------------------------------------
+# ---------- venues ----------
 @main_bp.route('/venues')
 def list_venues():
     venues = Venue.query.order_by(Venue.name).all()
     return render_template('venues/list.html', venues=venues)
 
-
-@main_bp.route('/venue/add', methods=['GET', 'POST'])
+@main_bp.route('/venue/add', methods=['GET','POST'])
 @login_required
+@require_roles('admin')  # only admin can manage venues (change if you want staff too)
 def add_venue():
     from .forms import VenueForm
     form = VenueForm()
@@ -64,9 +57,9 @@ def add_venue():
         flash_form_errors(form)
     return render_template('venues/add_edit.html', form=form, action="Add")
 
-
-@main_bp.route('/venue/<int:venue_id>/edit', methods=['GET', 'POST'])
+@main_bp.route('/venue/<int:venue_id>/edit', methods=['GET','POST'])
 @login_required
+@require_roles('admin')
 def edit_venue(venue_id):
     v = Venue.query.get_or_404(venue_id)
     from .forms import VenueForm
@@ -81,9 +74,9 @@ def edit_venue(venue_id):
         flash_form_errors(form)
     return render_template('venues/add_edit.html', form=form, action="Edit")
 
-
 @main_bp.route('/venue/<int:venue_id>/delete', methods=['POST'])
 @login_required
+@require_roles('admin')
 def delete_venue(venue_id):
     v = Venue.query.get_or_404(venue_id)
     if v.events:
@@ -94,17 +87,16 @@ def delete_venue(venue_id):
     flash("Venue deleted.", "info")
     return redirect(url_for('main.list_venues'))
 
-
-# ---- Resource routes (per-venue) -----------------------------------------
+# ---------- resources ----------
 @main_bp.route('/venue/<int:venue_id>/resources')
 @login_required
 def manage_resources(venue_id):
     venue = Venue.query.get_or_404(venue_id)
     return render_template('venues/resources.html', venue=venue)
 
-
-@main_bp.route('/venue/<int:venue_id>/resource/add', methods=['GET', 'POST'])
+@main_bp.route('/venue/<int:venue_id>/resource/add', methods=['GET','POST'])
 @login_required
+@require_roles('admin')
 def add_resource(venue_id):
     venue = Venue.query.get_or_404(venue_id)
     from .forms import ResourceForm
@@ -119,9 +111,9 @@ def add_resource(venue_id):
         flash_form_errors(form)
     return render_template('venues/resource_add_edit.html', form=form, action="Add", venue=venue)
 
-
-@main_bp.route('/resource/<int:res_id>/edit', methods=['GET', 'POST'])
+@main_bp.route('/resource/<int:res_id>/edit', methods=['GET','POST'])
 @login_required
+@require_roles('admin')
 def edit_resource(res_id):
     res = Resource.query.get_or_404(res_id)
     from .forms import ResourceForm
@@ -136,9 +128,9 @@ def edit_resource(res_id):
         flash_form_errors(form)
     return render_template('venues/resource_add_edit.html', form=form, action="Edit", venue=res.venue)
 
-
 @main_bp.route('/resource/<int:res_id>/delete', methods=['POST'])
 @login_required
+@require_roles('admin')
 def delete_resource(res_id):
     res = Resource.query.get_or_404(res_id)
     venue_id = res.venue_id
@@ -147,8 +139,7 @@ def delete_resource(res_id):
     flash("Resource deleted", "info")
     return redirect(url_for('main.manage_resources', venue_id=venue_id))
 
-
-# ---- Event routes ---------------------------------------------------------
+# ---------- events ----------
 @main_bp.route('/events')
 def list_events():
     q_date = request.args.get('date')
@@ -162,9 +153,9 @@ def list_events():
         events = Event.query.order_by(Event.date, Event.start_time).all()
     return render_template('events/list.html', events=events)
 
-
-@main_bp.route('/event/add', methods=['GET', 'POST'])
+@main_bp.route('/event/add', methods=['GET','POST'])
 @login_required
+@require_roles('admin', 'staff')
 def add_event():
     from .forms import EventForm
     form = EventForm()
@@ -192,9 +183,9 @@ def add_event():
         flash_form_errors(form)
     return render_template('events/add_edit.html', form=form, action="Add")
 
-
-@main_bp.route('/event/<int:event_id>/edit', methods=['GET', 'POST'])
+@main_bp.route('/event/<int:event_id>/edit', methods=['GET','POST'])
 @login_required
+@require_roles('admin', 'staff')
 def edit_event(event_id):
     e = Event.query.get_or_404(event_id)
     from .forms import EventForm
@@ -214,15 +205,15 @@ def edit_event(event_id):
         e.end_time = form.end_time.data
         e.venue_id = form.venue_id.data
         db.session.commit()
-        flash('Event updated.', 'success')
+        flash('Event updated', 'success')
         return redirect(url_for('main.list_events'))
     if request.method == 'POST' and not form.validate():
         flash_form_errors(form)
     return render_template('events/add_edit.html', form=form, action="Edit")
 
-
 @main_bp.route('/event/<int:event_id>/delete', methods=['POST'])
 @login_required
+@require_roles('admin')
 def delete_event(event_id):
     e = Event.query.get_or_404(event_id)
     db.session.delete(e)
@@ -230,17 +221,16 @@ def delete_event(event_id):
     flash('Event deleted.', 'info')
     return redirect(url_for('main.list_events'))
 
-
-# ---- Participant routes --------------------------------------------------
+# ---------- participants ----------
 @main_bp.route('/participants')
 @login_required
 def list_participants():
     participants = Participant.query.order_by(Participant.name).all()
     return render_template('participants/list.html', participants=participants)
 
-
-@main_bp.route('/participant/add', methods=['GET', 'POST'])
+@main_bp.route('/participant/add', methods=['GET','POST'])
 @login_required
+@require_roles('admin', 'staff')
 def add_participant():
     from .forms import ParticipantForm
     form = ParticipantForm()
@@ -255,14 +245,13 @@ def add_participant():
         db.session.commit()
         flash("Participant added", "success")
         return redirect(url_for('main.list_participants'))
-
     if request.method == 'POST' and not form.validate():
         flash_form_errors(form)
     return render_template('participants/add_edit.html', form=form, action="Add")
 
-
-@main_bp.route('/participant/<int:pid>/edit', methods=['GET', 'POST'])
+@main_bp.route('/participant/<int:pid>/edit', methods=['GET','POST'])
 @login_required
+@require_roles('admin', 'staff')
 def edit_participant(pid):
     p = Participant.query.get_or_404(pid)
     from .forms import ParticipantForm
@@ -275,36 +264,32 @@ def edit_participant(pid):
         db.session.commit()
         flash("Participant updated", "success")
         return redirect(url_for('main.list_participants'))
-
     if request.method == 'POST' and not form.validate():
         flash_form_errors(form)
     return render_template('participants/add_edit.html', form=form, action="Edit")
 
-
 @main_bp.route('/participant/<int:pid>/delete', methods=['POST'])
 @login_required
+@require_roles('admin')
 def delete_participant(pid):
     p = Participant.query.get_or_404(pid)
-    # detach from events explicitly (optional; cascade could handle)
     p.events = []
     db.session.delete(p)
     db.session.commit()
     flash("Participant deleted", "info")
     return redirect(url_for('main.list_participants'))
 
-
-# ---- Event <-> Participant registration ----------------------------------
+# ---------- event <-> participants ----------
 @main_bp.route('/event/<int:event_id>/participants')
 @login_required
 def event_participants_view(event_id):
     event = Event.query.get_or_404(event_id)
-    # available participants not already registered for this event
     available = Participant.query.filter(~Participant.events.any(id=event.id)).order_by(Participant.name).all()
     return render_template('events/participants.html', event=event, available=available)
 
-
 @main_bp.route('/event/<int:event_id>/participant/add', methods=['POST'])
 @login_required
+@require_roles('admin', 'staff')
 def add_participant_to_event(event_id):
     event = Event.query.get_or_404(event_id)
     pid = request.form.get('participant_id')
@@ -315,7 +300,6 @@ def add_participant_to_event(event_id):
     if p in event.participants:
         flash("Participant already registered for this event", "warning")
     else:
-        # optional capacity check
         if event.venue and event.venue.capacity and len(event.participants) >= event.venue.capacity:
             flash("Cannot add participant — venue capacity reached.", "danger")
         else:
@@ -324,9 +308,9 @@ def add_participant_to_event(event_id):
             flash("Participant added to event", "success")
     return redirect(url_for('main.event_participants_view', event_id=event_id))
 
-
 @main_bp.route('/event/<int:event_id>/participant/<int:pid>/remove', methods=['POST'])
 @login_required
+@require_roles('admin', 'staff')
 def remove_participant_from_event(event_id, pid):
     event = Event.query.get_or_404(event_id)
     p = Participant.query.get_or_404(pid)
