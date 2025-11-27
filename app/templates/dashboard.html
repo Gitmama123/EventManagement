@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div>
+    <h2>Dashboard</h2>
+    <p class="text-muted mb-0">Overview of events, venues, participants & resources</p>
+  </div>
+  <div>
+    <a class="btn btn-outline-secondary" href="{{ url_for('main.list_events') }}">View Events</a>
+    <a class="btn btn-outline-secondary" href="{{ url_for('main.list_venues') }}">View Venues</a>
+  </div>
+</div>
+
+<!-- Stats cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Total Events</h6>
+        <h3 class="card-text">{{ total_events }}</h3>
+        <small class="text-muted">{{ events_today_count }} today</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Venues</h6>
+        <h3 class="card-text">{{ total_venues }}</h3>
+        {% if busiest_venue %}
+          <small class="text-muted">Busiest: {{ busiest_venue[1] }} ({{ busiest_venue[2] }} events)</small>
+        {% else %}
+          <small class="text-muted">No events in next 30 days</small>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Participants</h6>
+        <h3 class="card-text">{{ total_participants }}</h3>
+        <small class="text-muted">Manage participants</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">Resources</h6>
+        <h3 class="card-text">{{ total_resources }}</h3>
+        <small class="text-muted">Allocated per venue</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Chart + upcoming events -->
+<div class="row">
+  <div class="col-lg-7 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Events — next 7 days</h5>
+        <canvas id="eventsChart" width="400" height="200"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5 mb-4">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Upcoming Events (14 days)</h5>
+        <ul class="list-group list-group-flush">
+          {% for e in upcoming_events %}
+            <li class="list-group-item">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <strong>{{ e.title }}</strong><br>
+                  <small class="text-muted">{{ e.date }} · {{ e.start_time }} - {{ e.end_time }}</small><br>
+                  <small class="text-muted">Venue: {{ e.venue.name if e.venue else 'N/A' }}</small>
+                </div>
+                <div class="text-end">
+                  <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.event_participants_view', event_id=e.id) }}">Participants</a>
+                  {% if current_user.is_authenticated and current_user.role in ['admin','staff'] %}
+                    <a class="btn btn-sm btn-primary" href="{{ url_for('main.edit_event', event_id=e.id) }}">Edit</a>
+                  {% endif %}
+                </div>
+              </div>
+            </li>
+          {% else %}
+            <li class="list-group-item text-muted">No upcoming events.</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+  (function(){
+    const labels = {{ days|tojson }};
+    const data = {{ day_counts|tojson }};
+
+    const ctx = document.getElementById('eventsChart').getContext('2d');
+    new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'Events',
+          data: data,
+          borderRadius: 5,
+          barThickness: 28
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { mode: 'index', intersect: false }
+        },
+        scales: {
+          y: { beginAtZero: true, precision: 0 }
+        }
+      }
+    });
+  })();
+</script>
+
+{% endblock %}

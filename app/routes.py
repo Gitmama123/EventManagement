@@ -11,6 +11,65 @@ from datetime import datetime
 
 main_bp = Blueprint('main', __name__)
 
+# Dashboard route 
+from datetime import date, datetime, timedelta
+from sqlalchemy import func
+
+@main_bp.route('/dashboard')
+@login_required
+def dashboard():
+    # Totals
+    total_events = Event.query.count()
+    total_venues = Venue.query.count()
+    total_participants = Participant.query.count()
+    total_resources = Resource.query.count()
+
+    # Events today
+    today = date.today()
+    events_today = Event.query.filter_by(date=today).order_by(Event.start_time).all()
+    events_today_count = len(events_today)
+
+    # Upcoming events (next 7 days including today)
+    days = []
+    day_counts = []
+    for i in range(0, 7):
+        d = today + timedelta(days=i)
+        days.append(d.strftime('%a %d %b'))  # e.g. Mon 01 Jan
+        cnt = Event.query.filter_by(date=d).count()
+        day_counts.append(cnt)
+
+    # Upcoming events list (next 14 days)
+    upcoming_limit = today + timedelta(days=14)
+    upcoming_events = Event.query.filter(Event.date >= today, Event.date <= upcoming_limit).order_by(Event.date, Event.start_time).all()
+
+    # Busiest venue in next 30 days (by number of events)
+    window_end = today + timedelta(days=30)
+    venue_counts = (
+        db.session.query(Venue.id, Venue.name, func.count(Event.id).label('ev_count'))
+                 .join(Event, Event.venue_id == Venue.id)
+                 .filter(Event.date >= today, Event.date <= window_end)
+                 .group_by(Venue.id)
+                 .order_by(func.count(Event.id).desc())
+                 .limit(1)
+                 .all()
+    )
+    busiest_venue = venue_counts[0] if venue_counts else None
+
+    return render_template(
+        'dashboard.html',
+        total_events=total_events,
+        total_venues=total_venues,
+        total_participants=total_participants,
+        total_resources=total_resources,
+        events_today=events_today,
+        events_today_count=events_today_count,
+        days=days,
+        day_counts=day_counts,
+        upcoming_events=upcoming_events,
+        busiest_venue=busiest_venue
+    )
+
+
 # ---------- helpers ----------
 def is_conflict(venue_id, date, start, end, ignore_id=None):
     events = Event.query.filter_by(venue_id=venue_id, date=date).all()

@@ -17,8 +17,8 @@
   <div class="container">
 
     <!-- Brand -->
-    <a class="navbar-brand" href="{{ url_for('main.index') }}">
-        EventMgr
+    <a class="navbar-brand" href="{{ url_for('main.dashboard') }}">
+        Planaroma
     </a>
 
     <!-- Toggler (Mobile) -->
@@ -32,6 +32,8 @@
       <!-- Left Navigation -->
       <ul class="navbar-nav me-auto">
 
+        
+
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.list_events') }}">Events</a>
         </li>
@@ -43,6 +45,8 @@
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.list_participants') }}">Participants</a>
         </li>
+        
+
 
       </ul>
 
