@@ -5,10 +5,11 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from . import db
-from .models import Venue, Event, Resource, Participant, EventParticipant
+from .models import Venue, Event, Resource, Participant, EventParticipant, User
 from .utils import require_roles
 from datetime import datetime, date, timedelta
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 
 main_bp = Blueprint('main', __name__)
 
@@ -39,7 +40,6 @@ def flash_form_errors(form):
 # ----------------- Root -----------------
 @main_bp.route('/')
 def index():
-    # Make dashboard the main landing page
     return redirect(url_for('main.dashboard'))
 
 
@@ -86,27 +86,23 @@ def dashboard():
     )
     busiest_venue = venue_counts[0] if venue_counts else None
 
-    # ---------------- Attendance Summary (today) ----------------
+    # Attendance summary for today's events
     attendance_summary = []
-
     for e in events_today:
         total = db.session.query(EventParticipant).filter_by(event_id=e.id).count()
         present = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='present').count()
         absent = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='absent').count()
         not_marked = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='not_marked').count()
-
-        attendance_rate = (present / total * 100) if total > 0 else 0
-
+        rate = (present / total * 100) if total > 0 else 0
         attendance_summary.append({
             "event": e,
             "total": total,
             "present": present,
             "absent": absent,
             "not_marked": not_marked,
-            "rate": round(attendance_rate, 1)
+            "rate": round(rate, 1)
         })
 
-    # ---------------- Return dashboard template ----------------
     return render_template(
         'dashboard.html',
         total_events=total_events,
@@ -338,12 +334,15 @@ def add_participant():
     from .forms import ParticipantForm
     form = ParticipantForm()
     if form.validate_on_submit():
+        # Create participant without passing unknown kwargs directly
         p = Participant(
             name=form.name.data.strip(),
             email=form.email.data.strip() if form.email.data else None,
-            phone=form.phone.data.strip() if form.phone.data else None,
-            notes=form.notes.data
+            phone=form.phone.data.strip() if form.phone.data else None
         )
+        # set notes only if attribute exists on model
+        if hasattr(p, 'notes'):
+            p.notes = form.notes.data
         db.session.add(p)
         db.session.commit()
         flash("Participant added", "success")
@@ -364,7 +363,9 @@ def edit_participant(pid):
         p.name = form.name.data.strip()
         p.email = form.email.data.strip() if form.email.data else None
         p.phone = form.phone.data.strip() if form.phone.data else None
-        p.notes = form.notes.data
+        # update notes safely
+        if hasattr(p, 'notes'):
+            p.notes = form.notes.data
         db.session.commit()
         flash("Participant updated", "success")
         return redirect(url_for('main.list_participants'))
@@ -479,7 +480,6 @@ def update_event_attendance(event_id):
     for key, val in request.form.items():
         if not key.startswith('status_'):
             continue
-        # expected key: status_123
         try:
             p_id = int(key.split('_', 1)[1])
         except Exception:
@@ -489,8 +489,6 @@ def update_event_attendance(event_id):
         assoc = EventParticipant.query.filter_by(event_id=event.id, participant_id=p_id).first()
         if assoc:
             if assoc.attendance_status != val:
-                current_app.logger.debug("Updating attendance for event %s participant %s: %s -> %s",
-                                         event.id, p_id, assoc.attendance_status, val)
                 assoc.attendance_status = val
                 updated += 1
         else:
@@ -500,9 +498,7 @@ def update_event_attendance(event_id):
         db.session.commit()
         flash(f"Updated attendance for {updated} participant(s).", "success")
     else:
-        # Helpful debug flash so you can see what was actually sent by the browser
         if received:
-            # convert received dict into short string e.g. "123:present,124:absent"
             rstr = ", ".join(f"{k}:{v}" for k, v in received.items())
             flash(f"No attendance changes detected. Received: {rstr}", "info")
         else:

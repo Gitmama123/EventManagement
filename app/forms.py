@@ -1,7 +1,12 @@
-# app/forms.py
 from flask_wtf import FlaskForm
-from wtforms import StringField, TextAreaField, DateField, TimeField, SelectField, IntegerField, SubmitField
-from wtforms.validators import DataRequired, NumberRange, Optional, Email
+from wtforms import (
+    StringField, TextAreaField, DateField, TimeField,
+    SelectField, IntegerField, SubmitField
+)
+from wtforms.validators import (
+    DataRequired, NumberRange, Email, Length, Regexp, Optional
+)
+
 
 class VenueForm(FlaskForm):
     name = StringField('Venue Name', validators=[DataRequired()])
@@ -24,7 +29,13 @@ class ResourceForm(FlaskForm):
 
 class ParticipantForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
-    email = StringField('Email', validators=[Optional(), Email()])
-    phone = StringField('Phone', validators=[Optional()])
+    email = StringField('Email', validators=[DataRequired(), Email(message="Enter a valid email")])
+    phone = StringField('Phone', validators=[
+        DataRequired(),
+        Length(min=10, max=15, message="Phone number must be between 10–15 digits"),
+        Regexp(r'^\+?\d{10,15}$', message="Phone number must contain only digits (optional +)")
+    ])
     notes = TextAreaField('Notes', validators=[Optional()])
     submit = SubmitField('Save')
+
+

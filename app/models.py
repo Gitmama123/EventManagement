@@ -4,6 +4,7 @@ from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(200), nullable=False)
@@ -15,9 +16,12 @@ class User(UserMixin, db.Model):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-# --- Venue, Resource, Event, Participant and association model ---
+    def __repr__(self):
+        return f'<User {self.username}>'
+
 
 class Venue(db.Model):
+    __tablename__ = 'venue'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False, unique=True)
     capacity = db.Column(db.Integer, nullable=False, default=0)
@@ -28,7 +32,9 @@ class Venue(db.Model):
     def __repr__(self):
         return f'<Venue {self.name}>'
 
+
 class Resource(db.Model):
+    __tablename__ = 'resource'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
     quantity = db.Column(db.Integer, nullable=False, default=1)
@@ -38,7 +44,9 @@ class Resource(db.Model):
     def __repr__(self):
         return f'<Resource {self.name} x{self.quantity} @ venue {self.venue_id}>'
 
+
 class Event(db.Model):
+    __tablename__ = 'event'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     description = db.Column(db.Text)
@@ -51,26 +59,39 @@ class Event(db.Model):
     participant_assoc = db.relationship('EventParticipant', back_populates='event', cascade='all, delete-orphan')
 
     # convenience relationship to get Participant objects directly
-    participants = db.relationship('Participant', secondary='event_participants', back_populates='events')
+    participants = db.relationship(
+        'Participant',
+        secondary='event_participants',
+        back_populates='events',
+        overlaps="participant_assoc,event_assoc"
+    )
 
     def __repr__(self):
         return f'<Event {self.title}>'
 
+
 class Participant(db.Model):
+    __tablename__ = 'participant'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     email = db.Column(db.String(200), nullable=True)
     phone = db.Column(db.String(50), nullable=True)
-    notes = db.Column(db.Text, nullable=True)
+    notes = db.Column(db.Text, nullable=True)  # added notes column
 
     # association objects
     event_assoc = db.relationship('EventParticipant', back_populates='participant', cascade='all, delete-orphan')
 
     # convenience relationship to get Event objects directly
-    events = db.relationship('Event', secondary='event_participants', back_populates='participants')
+    events = db.relationship(
+        'Event',
+        secondary='event_participants',
+        back_populates='participants',
+        overlaps="participant_assoc,event_assoc"
+    )
 
     def __repr__(self):
         return f'<Participant {self.name} ({self.email})>'
+
 
 class EventParticipant(db.Model):
     """
@@ -83,8 +104,8 @@ class EventParticipant(db.Model):
     attendance_status = db.Column(db.String(20), nullable=False, default='not_marked')
 
     # relationships back to owning models
-    event = db.relationship('Event', back_populates='participant_assoc')
-    participant = db.relationship('Participant', back_populates='event_assoc')
+    event = db.relationship('Event', back_populates='participant_assoc', overlaps="participants,event_assoc")
+    participant = db.relationship('Participant', back_populates='event_assoc', overlaps="events,participant_assoc")
 
     def __repr__(self):
         return f'<EventParticipant event={self.event_id} participant={self.participant_id} status={self.attendance_status}>'
