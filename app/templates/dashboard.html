@@ -58,9 +58,54 @@
   </div>
 </div>
 
+<!-- Attendance Summary (today) -->
+{% if attendance_summary %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <strong>Today's Attendance Summary</strong>
+    <small class="text-muted">Events happening today: {{ events_today_count }}</small>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead class="table-light">
+          <tr>
+            <th>Event</th>
+            <th>Registered</th>
+            <th>Present</th>
+            <th>Absent</th>
+            <th>Not Marked</th>
+            <th>Rate</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in attendance_summary %}
+          <tr>
+            <td class="align-middle">{{ a.event.title }}</td>
+            <td class="align-middle">{{ a.total }}</td>
+            <td class="align-middle">{{ a.present }}</td>
+            <td class="align-middle">{{ a.absent }}</td>
+            <td class="align-middle">{{ a.not_marked }}</td>
+            <td class="align-middle">{{ a.rate }}%</td>
+            <td class="align-middle text-end">
+              <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('main.event_participants_view', event_id=a.event.id) }}">Participants</a>
+              {% if current_user.is_authenticated and current_user.role in ['admin','staff'] %}
+                <a class="btn btn-sm btn-primary" href="{{ url_for('main.event_attendance_view', event_id=a.event.id) }}">Mark Attendance</a>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <!-- Chart + upcoming events -->
 <div class="row">
-  <div class="col-lg-7 mb-4">
+  <div class="col-lg-8 mb-4">
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Events — next 7 days</h5>
@@ -69,7 +114,7 @@
     </div>
   </div>
 
-  <div class="col-lg-5 mb-4">
+  <div class="col-lg-4 mb-4">
     <div class="card">
       <div class="card-body">
         <h5 class="card-title">Upcoming Events (14 days)</h5>
@@ -99,7 +144,10 @@
   </div>
 </div>
 
-
+<!-- Small footer note -->
+<div class="text-muted small mt-3">
+  Data refreshed on page load. For live updates consider adding polling or websockets.
+</div>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>

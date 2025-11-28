@@ -5,56 +5,108 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from . import db
-from .models import Venue, Event, Resource, Participant
+from .models import Venue, Event, Resource, Participant, EventParticipant
 from .utils import require_roles
-from datetime import datetime
+from datetime import datetime, date, timedelta
+from sqlalchemy import func
 
 main_bp = Blueprint('main', __name__)
 
-# Dashboard route 
-from datetime import date, datetime, timedelta
-from sqlalchemy import func
 
+# ----------------- Helpers -----------------
+def is_conflict(venue_id, date_, start, end, ignore_id=None):
+    """Return True if [start, end) conflicts with existing events at the same venue on date_."""
+    events = Event.query.filter_by(venue_id=venue_id, date=date_).all()
+    for e in events:
+        if ignore_id and e.id == ignore_id:
+            continue
+        if (start < e.end_time and end > e.start_time):
+            return True
+    return False
+
+
+def flash_form_errors(form):
+    """Log and flash a short validation summary if form has errors."""
+    messages = []
+    for field, errs in form.errors.items():
+        for e in errs:
+            messages.append(f"{field}: {e}")
+    if messages:
+        flash("Please fix the form errors and try again.", "danger")
+        current_app.logger.debug("Form errors: %s", messages)
+
+
+# ----------------- Root -----------------
+@main_bp.route('/')
+def index():
+    # Make dashboard the main landing page
+    return redirect(url_for('main.dashboard'))
+
+
+# ----------------- Dashboard -----------------
 @main_bp.route('/dashboard')
 @login_required
 def dashboard():
-    # Totals
     total_events = Event.query.count()
     total_venues = Venue.query.count()
     total_participants = Participant.query.count()
     total_resources = Resource.query.count()
 
-    # Events today
     today = date.today()
     events_today = Event.query.filter_by(date=today).order_by(Event.start_time).all()
     events_today_count = len(events_today)
 
-    # Upcoming events (next 7 days including today)
+    # next 7 days data
     days = []
     day_counts = []
     for i in range(0, 7):
         d = today + timedelta(days=i)
-        days.append(d.strftime('%a %d %b'))  # e.g. Mon 01 Jan
+        days.append(d.strftime('%a %d %b'))
         cnt = Event.query.filter_by(date=d).count()
         day_counts.append(cnt)
 
-    # Upcoming events list (next 14 days)
+    # upcoming events (14 days)
     upcoming_limit = today + timedelta(days=14)
-    upcoming_events = Event.query.filter(Event.date >= today, Event.date <= upcoming_limit).order_by(Event.date, Event.start_time).all()
+    upcoming_events = (
+        Event.query.filter(Event.date >= today, Event.date <= upcoming_limit)
+        .order_by(Event.date, Event.start_time)
+        .all()
+    )
 
-    # Busiest venue in next 30 days (by number of events)
+    # busiest venue next 30 days
     window_end = today + timedelta(days=30)
     venue_counts = (
         db.session.query(Venue.id, Venue.name, func.count(Event.id).label('ev_count'))
-                 .join(Event, Event.venue_id == Venue.id)
-                 .filter(Event.date >= today, Event.date <= window_end)
-                 .group_by(Venue.id)
-                 .order_by(func.count(Event.id).desc())
-                 .limit(1)
-                 .all()
+        .join(Event, Event.venue_id == Venue.id)
+        .filter(Event.date >= today, Event.date <= window_end)
+        .group_by(Venue.id)
+        .order_by(func.count(Event.id).desc())
+        .limit(1)
+        .all()
     )
     busiest_venue = venue_counts[0] if venue_counts else None
 
+    # ---------------- Attendance Summary (today) ----------------
+    attendance_summary = []
+
+    for e in events_today:
+        total = db.session.query(EventParticipant).filter_by(event_id=e.id).count()
+        present = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='present').count()
+        absent = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='absent').count()
+        not_marked = db.session.query(EventParticipant).filter_by(event_id=e.id, attendance_status='not_marked').count()
+
+        attendance_rate = (present / total * 100) if total > 0 else 0
+
+        attendance_summary.append({
+            "event": e,
+            "total": total,
+            "present": present,
+            "absent": absent,
+            "not_marked": not_marked,
+            "rate": round(attendance_rate, 1)
+        })
+
+    # ---------------- Return dashboard template ----------------
     return render_template(
         'dashboard.html',
         total_events=total_events,
@@ -66,43 +118,22 @@ def dashboard():
         days=days,
         day_counts=day_counts,
         upcoming_events=upcoming_events,
-        busiest_venue=busiest_venue
+        busiest_venue=busiest_venue,
+        attendance_summary=attendance_summary
     )
 
 
-# ---------- helpers ----------
-def is_conflict(venue_id, date, start, end, ignore_id=None):
-    events = Event.query.filter_by(venue_id=venue_id, date=date).all()
-    for e in events:
-        if ignore_id and e.id == ignore_id:
-            continue
-        if start < e.end_time and end > e.start_time:
-            return True
-    return False
-
-def flash_form_errors(form):
-    messages = []
-    for field, errs in form.errors.items():
-        for e in errs:
-            messages.append(f"{field}: {e}")
-    if messages:
-        flash("Please fix the form errors and try again.", "danger")
-        current_app.logger.debug("Form errors: %s", messages)
-
-# ---------- root ----------
-@main_bp.route('/')
-def index():
-    return redirect(url_for('main.list_events'))
-
-# ---------- venues ----------
+# ----------------- Venue routes -----------------
 @main_bp.route('/venues')
+@login_required
 def list_venues():
     venues = Venue.query.order_by(Venue.name).all()
     return render_template('venues/list.html', venues=venues)
 
-@main_bp.route('/venue/add', methods=['GET','POST'])
+
+@main_bp.route('/venue/add', methods=['GET', 'POST'])
 @login_required
-@require_roles('admin')  # only admin can manage venues (change if you want staff too)
+@require_roles('admin')
 def add_venue():
     from .forms import VenueForm
     form = VenueForm()
@@ -116,7 +147,8 @@ def add_venue():
         flash_form_errors(form)
     return render_template('venues/add_edit.html', form=form, action="Add")
 
-@main_bp.route('/venue/<int:venue_id>/edit', methods=['GET','POST'])
+
+@main_bp.route('/venue/<int:venue_id>/edit', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def edit_venue(venue_id):
@@ -133,6 +165,7 @@ def edit_venue(venue_id):
         flash_form_errors(form)
     return render_template('venues/add_edit.html', form=form, action="Edit")
 
+
 @main_bp.route('/venue/<int:venue_id>/delete', methods=['POST'])
 @login_required
 @require_roles('admin')
@@ -146,14 +179,16 @@ def delete_venue(venue_id):
     flash("Venue deleted.", "info")
     return redirect(url_for('main.list_venues'))
 
-# ---------- resources ----------
+
+# ----------------- Resource routes -----------------
 @main_bp.route('/venue/<int:venue_id>/resources')
 @login_required
 def manage_resources(venue_id):
     venue = Venue.query.get_or_404(venue_id)
     return render_template('venues/resources.html', venue=venue)
 
-@main_bp.route('/venue/<int:venue_id>/resource/add', methods=['GET','POST'])
+
+@main_bp.route('/venue/<int:venue_id>/resource/add', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def add_resource(venue_id):
@@ -170,7 +205,8 @@ def add_resource(venue_id):
         flash_form_errors(form)
     return render_template('venues/resource_add_edit.html', form=form, action="Add", venue=venue)
 
-@main_bp.route('/resource/<int:res_id>/edit', methods=['GET','POST'])
+
+@main_bp.route('/resource/<int:res_id>/edit', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin')
 def edit_resource(res_id):
@@ -187,6 +223,7 @@ def edit_resource(res_id):
         flash_form_errors(form)
     return render_template('venues/resource_add_edit.html', form=form, action="Edit", venue=res.venue)
 
+
 @main_bp.route('/resource/<int:res_id>/delete', methods=['POST'])
 @login_required
 @require_roles('admin')
@@ -198,8 +235,10 @@ def delete_resource(res_id):
     flash("Resource deleted", "info")
     return redirect(url_for('main.manage_resources', venue_id=venue_id))
 
-# ---------- events ----------
+
+# ----------------- Event routes -----------------
 @main_bp.route('/events')
+@login_required
 def list_events():
     q_date = request.args.get('date')
     if q_date:
@@ -212,7 +251,8 @@ def list_events():
         events = Event.query.order_by(Event.date, Event.start_time).all()
     return render_template('events/list.html', events=events)
 
-@main_bp.route('/event/add', methods=['GET','POST'])
+
+@main_bp.route('/event/add', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin', 'staff')
 def add_event():
@@ -242,7 +282,8 @@ def add_event():
         flash_form_errors(form)
     return render_template('events/add_edit.html', form=form, action="Add")
 
-@main_bp.route('/event/<int:event_id>/edit', methods=['GET','POST'])
+
+@main_bp.route('/event/<int:event_id>/edit', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin', 'staff')
 def edit_event(event_id):
@@ -270,6 +311,7 @@ def edit_event(event_id):
         flash_form_errors(form)
     return render_template('events/add_edit.html', form=form, action="Edit")
 
+
 @main_bp.route('/event/<int:event_id>/delete', methods=['POST'])
 @login_required
 @require_roles('admin')
@@ -277,17 +319,19 @@ def delete_event(event_id):
     e = Event.query.get_or_404(event_id)
     db.session.delete(e)
     db.session.commit()
-    flash('Event deleted.', 'info')
+    flash('Event deleted', 'info')
     return redirect(url_for('main.list_events'))
 
-# ---------- participants ----------
+
+# ----------------- Participant routes -----------------
 @main_bp.route('/participants')
 @login_required
 def list_participants():
     participants = Participant.query.order_by(Participant.name).all()
     return render_template('participants/list.html', participants=participants)
 
-@main_bp.route('/participant/add', methods=['GET','POST'])
+
+@main_bp.route('/participant/add', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin', 'staff')
 def add_participant():
@@ -308,7 +352,8 @@ def add_participant():
         flash_form_errors(form)
     return render_template('participants/add_edit.html', form=form, action="Add")
 
-@main_bp.route('/participant/<int:pid>/edit', methods=['GET','POST'])
+
+@main_bp.route('/participant/<int:pid>/edit', methods=['GET', 'POST'])
 @login_required
 @require_roles('admin', 'staff')
 def edit_participant(pid):
@@ -327,24 +372,31 @@ def edit_participant(pid):
         flash_form_errors(form)
     return render_template('participants/add_edit.html', form=form, action="Edit")
 
+
 @main_bp.route('/participant/<int:pid>/delete', methods=['POST'])
 @login_required
 @require_roles('admin')
 def delete_participant(pid):
     p = Participant.query.get_or_404(pid)
-    p.events = []
+    # Delete association rows explicitly
+    EventParticipant.query.filter_by(participant_id=p.id).delete()
     db.session.delete(p)
     db.session.commit()
     flash("Participant deleted", "info")
     return redirect(url_for('main.list_participants'))
 
-# ---------- event <-> participants ----------
+
+# ----------------- Event <-> Participant (association-aware) -----------------
 @main_bp.route('/event/<int:event_id>/participants')
 @login_required
 def event_participants_view(event_id):
     event = Event.query.get_or_404(event_id)
+    # participants available to add (not already in event)
     available = Participant.query.filter(~Participant.events.any(id=event.id)).order_by(Participant.name).all()
-    return render_template('events/participants.html', event=event, available=available)
+    # current participants via association objects
+    assocs = EventParticipant.query.filter_by(event_id=event.id).join(Participant).order_by(Participant.name).all()
+    return render_template('events/participants.html', event=event, available=available, assocs=assocs)
+
 
 @main_bp.route('/event/<int:event_id>/participant/add', methods=['POST'])
 @login_required
@@ -355,26 +407,105 @@ def add_participant_to_event(event_id):
     if not pid:
         flash("No participant selected", "danger")
         return redirect(url_for('main.event_participants_view', event_id=event_id))
+
     p = Participant.query.get_or_404(int(pid))
-    if p in event.participants:
+    # check existing association
+    exists = EventParticipant.query.filter_by(event_id=event.id, participant_id=p.id).first()
+    if exists:
         flash("Participant already registered for this event", "warning")
-    else:
-        if event.venue and event.venue.capacity and len(event.participants) >= event.venue.capacity:
-            flash("Cannot add participant — venue capacity reached.", "danger")
-        else:
-            event.participants.append(p)
-            db.session.commit()
-            flash("Participant added to event", "success")
+        return redirect(url_for('main.event_participants_view', event_id=event_id))
+
+    # capacity check
+    if event.venue and event.venue.capacity and EventParticipant.query.filter_by(event_id=event.id).count() >= event.venue.capacity:
+        flash("Cannot add participant — venue capacity reached.", "danger")
+        return redirect(url_for('main.event_participants_view', event_id=event_id))
+
+    assoc = EventParticipant(event_id=event.id, participant_id=p.id, attendance_status='not_marked')
+    db.session.add(assoc)
+    db.session.commit()
+    flash("Participant added to event", "success")
     return redirect(url_for('main.event_participants_view', event_id=event_id))
+
 
 @main_bp.route('/event/<int:event_id>/participant/<int:pid>/remove', methods=['POST'])
 @login_required
 @require_roles('admin', 'staff')
 def remove_participant_from_event(event_id, pid):
-    event = Event.query.get_or_404(event_id)
-    p = Participant.query.get_or_404(pid)
-    if p in event.participants:
-        event.participants.remove(p)
+    assoc = EventParticipant.query.filter_by(event_id=event_id, participant_id=pid).first()
+    if assoc:
+        db.session.delete(assoc)
         db.session.commit()
         flash("Participant removed from event", "info")
+    else:
+        flash("Participant not registered for event", "warning")
     return redirect(url_for('main.event_participants_view', event_id=event_id))
+
+
+# ----------------- Attendance routes -----------------
+@main_bp.route('/event/<int:event_id>/attendance')
+@login_required
+@require_roles('admin', 'staff')
+def event_attendance_view(event_id):
+    event = Event.query.get_or_404(event_id)
+    assocs = EventParticipant.query.filter_by(event_id=event.id).join(Participant).order_by(Participant.name).all()
+    return render_template('events/attendance.html', event=event, assocs=assocs)
+
+
+@main_bp.route('/event/<int:event_id>/attendance/update', methods=['POST'])
+@login_required
+@require_roles('admin', 'staff')
+def update_event_attendance(event_id):
+    event = Event.query.get_or_404(event_id)
+
+    # Quick debug: log what form fields were posted (useful during dev)
+    current_app.logger.debug("Attendance POST data: %s", dict(request.form))
+
+    # 1) Single-update path (AJAX or single-field form)
+    pid = request.form.get('participant_id')
+    status = request.form.get('status')
+    if pid and status:
+        assoc = EventParticipant.query.filter_by(event_id=event.id, participant_id=int(pid)).first()
+        if not assoc:
+            flash("Participant not registered.", "danger")
+            return redirect(url_for('main.event_attendance_view', event_id=event_id))
+        assoc.attendance_status = status
+        db.session.commit()
+        flash("Attendance updated.", "success")
+        return redirect(url_for('main.event_attendance_view', event_id=event_id))
+
+    # 2) Batch update: fields like status_<participant_id>
+    updated = 0
+    received = {}  # for clearer feedback
+    for key, val in request.form.items():
+        if not key.startswith('status_'):
+            continue
+        # expected key: status_123
+        try:
+            p_id = int(key.split('_', 1)[1])
+        except Exception:
+            current_app.logger.debug("Skipping malformed attendance key: %s", key)
+            continue
+        received[p_id] = val
+        assoc = EventParticipant.query.filter_by(event_id=event.id, participant_id=p_id).first()
+        if assoc:
+            if assoc.attendance_status != val:
+                current_app.logger.debug("Updating attendance for event %s participant %s: %s -> %s",
+                                         event.id, p_id, assoc.attendance_status, val)
+                assoc.attendance_status = val
+                updated += 1
+        else:
+            current_app.logger.debug("No association row for event %s participant %s", event.id, p_id)
+
+    if updated:
+        db.session.commit()
+        flash(f"Updated attendance for {updated} participant(s).", "success")
+    else:
+        # Helpful debug flash so you can see what was actually sent by the browser
+        if received:
+            # convert received dict into short string e.g. "123:present,124:absent"
+            rstr = ", ".join(f"{k}:{v}" for k, v in received.items())
+            flash(f"No attendance changes detected. Received: {rstr}", "info")
+        else:
+            flash("No attendance fields were found in the submitted form.", "warning")
+
+    return redirect(url_for('main.event_attendance_view', event_id=event_id))

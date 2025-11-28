@@ -8,6 +8,8 @@
   </div>
   <div>
     <a class="btn btn-secondary" href="{{ url_for('main.list_events') }}">Back to Events</a>
+    <a class="btn btn-sm btn-outline-success" href="{{ url_for('main.event_attendance_view', event_id=event.id) }}">Mark Attendance</a>
+
   </div>
 </div>
 
