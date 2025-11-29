@@ -11,6 +11,10 @@ from datetime import datetime, date, timedelta
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
 
+from .forms import UserForm
+from .models import User
+from sqlalchemy.exc import IntegrityError
+
 main_bp = Blueprint('main', __name__)
 
 
@@ -440,6 +444,74 @@ def remove_participant_from_event(event_id, pid):
     else:
         flash("Participant not registered for event", "warning")
     return redirect(url_for('main.event_participants_view', event_id=event_id))
+
+# === Admin user management routes ===
+@main_bp.route('/admin/users')
+@login_required
+@require_roles('admin')
+def admin_list_users():
+    users = User.query.order_by(User.username).all()
+    return render_template('admin/users.html', users=users)
+
+@main_bp.route('/admin/user/add', methods=['GET', 'POST'])
+@login_required
+@require_roles('admin')
+def admin_add_user():
+    form = UserForm()
+    if form.validate_on_submit():
+        try:
+            u = User(username=form.username.data.strip(), role=form.role.data)
+            if form.password.data:
+                u.set_password(form.password.data)
+            db.session.add(u)
+            db.session.commit()
+            flash('User created', 'success')
+            return redirect(url_for('main.admin_list_users'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Username already exists', 'danger')
+    if request.method == 'POST' and not form.validate():
+        flash_form_errors(form)
+    return render_template('admin/edit_user.html', form=form, action='Add')
+
+@main_bp.route('/admin/user/<int:uid>/edit', methods=['GET', 'POST'])
+@login_required
+@require_roles('admin')
+def admin_edit_user(uid):
+    user = User.query.get_or_404(uid)
+    form = UserForm(obj=user)
+    # Do not prefill password fields
+    form.password.data = ''
+    form.password_confirm.data = ''
+    if form.validate_on_submit():
+        user.username = form.username.data.strip()
+        user.role = form.role.data
+        if form.password.data:
+            user.set_password(form.password.data)
+        try:
+            db.session.commit()
+            flash('User updated', 'success')
+            return redirect(url_for('main.admin_list_users'))
+        except IntegrityError:
+            db.session.rollback()
+            flash('Username already exists', 'danger')
+    if request.method == 'POST' and not form.validate():
+        flash_form_errors(form)
+    return render_template('admin/edit_user.html', form=form, action='Edit', user=user)
+
+@main_bp.route('/admin/user/<int:uid>/delete', methods=['POST'])
+@login_required
+@require_roles('admin')
+def admin_delete_user(uid):
+    user = User.query.get_or_404(uid)
+    if user.username == current_user.username:
+        flash("You cannot delete your own account while logged in.", "warning")
+        return redirect(url_for('main.admin_list_users'))
+    db.session.delete(user)
+    db.session.commit()
+    flash('User deleted', 'info')
+    return redirect(url_for('main.admin_list_users'))
+
 
 
 # ----------------- Attendance routes -----------------

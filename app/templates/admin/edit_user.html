@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="mb-3">
+  <h2>{{ action }} User</h2>
+</div>
+
+<div class="card">
+  <div class="card-body">
+    <form method="post" novalidate>
+      {{ form.hidden_tag() }}
+
+      <div class="mb-3">
+        {{ form.username.label(class="form-label") }}
+        {{ form.username(class="form-control", placeholder="username") }}
+        {% for e in form.username.errors %}
+          <div class="text-danger small">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.role.label(class="form-label") }}
+        {{ form.role(class="form-select") }}
+        {% for e in form.role.errors %}
+          <div class="text-danger small">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <div class="mb-3">
+        {{ form.password.label(class="form-label") }}
+        {{ form.password(class="form-control", autocomplete="new-password") }}
+        {% for e in form.password.errors %}
+          <div class="text-danger small">{{ e }}</div>
+        {% endfor %}
+        <div class="form-text">Leave blank to keep existing password</div>
+      </div>
+
+      <div class="mb-3">
+        {{ form.password_confirm.label(class="form-label") }}
+        {{ form.password_confirm(class="form-control", autocomplete="new-password") }}
+        {% for e in form.password_confirm.errors %}
+          <div class="text-danger small">{{ e }}</div>
+        {% endfor %}
+      </div>
+
+      <button class="btn btn-primary" type="submit">{{ action }}</button>
+      <a class="btn btn-link" href="{{ url_for('main.admin_list_users') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

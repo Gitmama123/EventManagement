@@ -1,22 +1,20 @@
 # app/utils.py
+from functools import wraps
 from flask import abort
 from flask_login import current_user
-from functools import wraps
 
 def require_roles(*roles):
     """
-    Decorator to require that current_user.role is one of roles.
-    Example:
-        @require_roles('admin', 'staff')
+    Decorator to restrict access to users whose current_user.role is in roles.
+    Usage: @require_roles('admin') or @require_roles('admin','staff')
     """
-    def wrapper(f):
+    def decorator(f):
         @wraps(f)
-        def decorated_function(*args, **kwargs):
-            if not current_user.is_authenticated:
-                # Let login_required handle redirects; here we simply abort
-                abort(401)
+        def wrapped(*args, **kwargs):
+            if not current_user or not current_user.is_authenticated:
+                abort(403)
             if current_user.role not in roles:
                 abort(403)
             return f(*args, **kwargs)
-        return decorated_function
-    return wrapper
+        return wrapped
+    return decorator
