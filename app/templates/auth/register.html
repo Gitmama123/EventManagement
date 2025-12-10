@@ -1,10 +1,29 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Register</h2>
-<form method="POST">
-  <div class="mb-3"><input class="form-control" name="username" placeholder="Username" required></div>
-  <div class="mb-3"><input class="form-control" type="password" name="password" placeholder="Password" required></div>
-  <button class="btn btn-success">Sign Up</button>
-  <a class="btn btn-link" href="{{ url_for('auth.login') }}">Back to Login</a>
-</form>
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card card-accent-pink shadow-sm">
+      <div class="card-body">
+        <h2 class="card-title text-center mb-4">Register</h2>
+        <form method="POST">
+          <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input class="form-control" name="username" placeholder="Username" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input class="form-control" type="password" name="password" placeholder="Password" required>
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary"
+              style="background-color: var(--accent-pink); border-color: var(--accent-pink);">Sign Up</button>
+          </div>
+          <div class="text-center mt-3">
+            <a href="{{ url_for('auth.login') }}">Back to Login</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}

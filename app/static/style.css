@@ -1,0 +1,186 @@
+/* Modern Dark SaaS - Global Styles */
+
+:root {
+  /* Color Palette */
+  --bg-primary: #0B0B26;
+  --card-surface: #12123A;
+  --text-primary: #FFFFFF;
+  --text-secondary: #B0B0D0;
+  --accent-pink: #E086D3;
+  --accent-purple: #A288E3;
+  --border-color: #2D2D55;
+  --border-radius: 12px;
+  
+  /* Typography */
+  --font-family: 'Inter', sans-serif;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+a {
+  color: var(--accent-purple);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  color: var(--accent-pink);
+}
+
+/* Navbar Overrides */
+.navbar {
+  background-color: var(--card-surface) !important;
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 0;
+}
+
+.navbar-brand {
+  color: var(--accent-pink) !important;
+  font-weight: 800;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+}
+
+.nav-link {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+}
+
+.nav-link:hover, .nav-link.active {
+  color: var(--text-primary) !important;
+}
+
+/* Card Component */
+.card {
+  background-color: var(--card-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem; /* ~24px */
+  margin-bottom: 1.5rem;
+  box-shadow: none; /* Removed heavy shadows */
+}
+
+.card-title {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.card-text {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+/* Accent Strips */
+.card-accent-pink {
+  border-left: 6px solid var(--accent-pink);
+}
+
+.card-accent-purple {
+  border-left: 6px solid var(--accent-purple);
+}
+
+/* 2x2 Grid Layout Wrapper */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .dashboard-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--accent-purple);
+  border-color: var(--accent-purple);
+  color: #fff;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-pink);
+  border-color: var(--accent-pink);
+}
+
+.btn-outline-secondary {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.btn-outline-secondary:hover {
+  background-color: var(--card-surface);
+  color: var(--text-primary);
+  border-color: var(--text-primary);
+}
+
+/* Tables */
+.table {
+  color: var(--text-secondary);
+  border-color: var(--border-color);
+}
+
+.table thead th {
+  background-color: var(--card-surface);
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--border-color);
+  font-weight: 600;
+}
+
+.table td, .table th {
+  border-color: var(--border-color);
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background-color: rgba(255, 255, 255, 0.03); /* Subtle stripe */
+  color: var(--text-secondary);
+}
+
+.table-striped > tbody > tr:nth-of-type(even) > * {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+/* Forms */
+.form-control, .form-select {
+  background-color: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: rgba(0, 0, 0, 0.3);
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+  box-shadow: 0 0 0 0.25rem rgba(162, 136, 227, 0.25);
+}
+
+.form-control::placeholder {
+  color: rgba(176, 176, 208, 0.5);
+}
+
+/* List Groups */
+.list-group-item {
+  background-color: transparent;
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+/* Text Utilities */
+.text-muted {
+  color: rgba(176, 176, 208, 0.7) !important;
+}
