@@ -1,10 +1,10 @@
-<h1>🎉 Event Logistics & Schedule Manager </h1>
+<h1> Event Logistics & Schedule Manager </h1>
 
 <h2>A modern Flask-based event management system for handling events, venues, participants, resources, attendance, and scheduling — complete with authentication, role-based access, and a real-time dashboard.</h2>
 
-🚀 Features
+Features
 
-🔐 User Authentication & Roles
+ User Authentication & Roles
 ```
 Secure login & logout (Flask-Login)
 Role support: Admin, Staff, Viewer
@@ -12,7 +12,7 @@ Admin/Staff can create & modify data
 Viewer: read-only access
 Protected routes for all CRUD operations
 ```
-📅 Event Management
+Event Management
 ```
 Add / Edit / Delete events
 Select date, start time, end time
@@ -23,7 +23,7 @@ Filter events by date
 Event participants management
 Attendance tracking (per participant)
 ```
-🏛 Venue Management
+Venue Management
 
 ```
 Add, edit, delete venues
@@ -32,7 +32,7 @@ View resources assigned to each venue
 See how many events scheduled at the venue
 Integrated conflict system with event scheduling
 ```
-🔧 Venue Resource Management
+Venue Resource Management
 (Under Venue Management)
 
 ```
@@ -42,7 +42,7 @@ Organized per venue
 Ensures better planning & logistics visibility
 ```
 
-🧑‍🤝‍🧑 Participant Management
+Participant Management
 
 ```
 Add, edit, delete participants
@@ -55,7 +55,7 @@ Prevent duplicate registrations
 Auto-enforce venue capacity
 Participant list view per event
 ```
-✔️ Attendance Management
+Attendance Management
 
 ```
 Mark attendance for each participant
@@ -65,7 +65,7 @@ Attendance stored in event-participant association
 Completely integrated with dashboard
 ```
 
-📊 Dashboard & Analytics
+Dashboard & Analytics
 
 ```
 Real-time dashboard with:
@@ -83,7 +83,7 @@ Participants per event
 Mark Attendance
 ```
 
-🎨 UI & UX
+UI & UX
 
 ```
 Responsive Bootstrap 5 design
@@ -93,7 +93,7 @@ Organized templates: events, venues, participants, auth
 Flash messages for success/error/info
 Modern color scheme & clean spacing
 ```
-📁 Project Structure
+Project Structure
 
 ```text
 EventManagement/
@@ -133,7 +133,7 @@ EventManagement/
 │── requirements.txt
 └── README.md
 ```
-⚙️ Installation & Setup
+Installation & Setup
 1️⃣ Clone the Repository
 ```
 git clone https://github.com/Gitmama123/EventManagement.git
@@ -167,7 +167,7 @@ The app will automatically create instance/app.db if it doesn’t exist.
 5️⃣ Open in Browser
 http://127.0.0.1:5000
 
-🛠 Technologies Used
+Technologies Used
 ```
 Python 3
 Flask
@@ -178,7 +178,7 @@ Bootstrap 5
 Chart.js
 SQLite
 ```
-📜 License
+License
 
 This project is open-source for educational and personal use.
 Feel free to modify, extend, and improve it.
